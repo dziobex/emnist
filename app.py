@@ -25,7 +25,7 @@ class DrawingApp:
         self.reset_button = tk.Button(self.root, text="Reset", command=self.reset_canvas)
         self.reset_button.pack()
 
-        self.result_label_cnn = tk.Label(self.root, text="CNN: ", font=("Helvetica", 18))
+        self.result_label_cnn = tk.Label(self.root, text="Simple CNN: ", font=("Helvetica", 18))
         self.result_label_cnn.pack()
 
         self.result_label_resnet = tk.Label(self.root, text="ResNet: ", font=("Helvetica", 18))
@@ -94,7 +94,7 @@ class DrawingApp:
         self.canvas.delete("all")
         self.image = Image.new("L", self.canvas_size)
         self.draw = ImageDraw.Draw(self.image)
-        self.result_label_cnn.config(text="CNN: ")
+        self.result_label_cnn.config(text="Simple CNN: ")
         self.result_label_resnet.config(text="ResNet: ")
 
 root = tk.Tk()
