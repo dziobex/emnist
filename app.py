@@ -100,8 +100,8 @@ class DrawingApp:
 root = tk.Tk()
 root.title("Digit Recognizer with CNN and ResNet")
 
-cnn_path = 'models/model.pth'
-resnet_path = 'models/rn_model.pth'
+cnn_path = 'models/model_cnn.pth'
+resnet_path = 'models/model_rnn.pth'
 
 app = DrawingApp(root, cnn_path=cnn_path, resnet_path=resnet_path)
 root.mainloop()
