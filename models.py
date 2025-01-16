@@ -1,46 +1,11 @@
-import numpy as np
-import tkinter as tk
-from PIL import Image, ImageDraw
-import torch
-import torch.nn as nn
 import torch.nn.functional as F
-import pandas as pd
+import torch.nn as nn
+import torch
+from torch.utils.data import Dataset
+from torchvision import transforms
 
-# Define the CNN architecture
-class CNNBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, **kwargs):
-        super().__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, **kwargs)
-        self.bn = nn.BatchNorm2d(out_channels)
-        self.drop = nn.Dropout(0.2)
-        
-    def forward(self, x):
-        x = F.relu(self.conv(x))
-        x = self.bn(x)
-        x = self.drop(x)
-        return x
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-class SimpleCNN(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.layer1 = CNNBlock(1, 64, kernel_size=2, padding=1)
-        self.layer2 = CNNBlock(64, 128, kernel_size=2, padding=1)
-        self.layer3 = CNNBlock(128, 256, kernel_size=2, padding=1)
-        self.gap = nn.AdaptiveAvgPool2d(1)
-        self.fc = nn.Linear(256, 47)
-        
-    def forward(self, x):
-        x = self.layer1(x)
-        x = F.max_pool2d(x, 2)
-        x = self.layer2(x)
-        x = F.max_pool2d(x, 2)
-        x = self.layer3(x)
-        x = self.gap(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-         
-        return x
-    
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1, downsample=None):
         super(ResidualBlock, self).__init__()
@@ -61,13 +26,12 @@ class ResidualBlock(nn.Module):
         out = self.relu(out)
         out = self.conv2(out)
         out = self.bn2(out)
-
+        
         out += identity
         out = self.relu(out)
 
         return out
 
-# Define ResNet
 class ResNet(nn.Module):
     def __init__(self, block, layers, num_classes=47):
         super(ResNet, self).__init__()
@@ -117,3 +81,108 @@ class ResNet(nn.Module):
         x = self.fc(x)
 
         return x
+    
+import torch.nn.functional as F
+import torch.nn as nn
+
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+class CNNBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, **kwargs):
+        super().__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, **kwargs)
+        self.bn = nn.BatchNorm2d(out_channels)
+        self.drop = nn.Dropout(0.2)
+        
+    def forward(self, x):
+        x = F.relu(self.conv(x))
+        x = self.bn(x)
+        x = self.drop(x)
+        return x
+
+class SimpleCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = CNNBlock(1, 64, kernel_size=2, padding=1)
+        self.layer2 = CNNBlock(64, 128, kernel_size=2, padding=1)
+        self.layer3 = CNNBlock(128, 256, kernel_size=2, padding=1)
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(256, 47)
+        
+    def forward(self, x):
+        x = self.layer1(x)
+        x = F.max_pool2d(x, 2)
+        x = self.layer2(x)
+        x = F.max_pool2d(x, 2)
+        x = self.layer3(x)
+        x = self.gap(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+         
+        return x
+    
+
+class SimpleCNNWide(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = CNNBlock(1, 128, kernel_size=2, padding=1)
+        self.layer2 = CNNBlock(128, 256, kernel_size=2, padding=1)
+        self.layer3 = CNNBlock(256, 512, kernel_size=2, padding=1)
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(512, 47)
+        
+    def forward(self, x):
+        x = self.layer1(x)
+        x = F.max_pool2d(x, 2)
+        x = self.layer2(x)
+        x = F.max_pool2d(x, 2)
+        x = self.layer3(x)
+        x = self.gap(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+         
+        return x
+
+class SimpleCNNDeep(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.layer1 = CNNBlock(1, 32, kernel_size=2, padding=1)
+        self.layer2 = CNNBlock(32, 64, kernel_size=2, padding=1)
+        self.layer3 = CNNBlock(64, 128, kernel_size=2, padding=1)
+        self.layer4 = CNNBlock(128, 256, kernel_size=2, padding=1)
+        self.gap = nn.AdaptiveAvgPool2d(1)
+        self.fc = nn.Linear(256, 47)
+        
+    def forward(self, x):
+        x = self.layer1(x)
+        x = F.max_pool2d(x, 2)
+        x = self.layer2(x)
+        x = F.max_pool2d(x, 2)
+        x = self.layer3(x)
+        x = F.max_pool2d(x, 2)
+        x = self.layer4(x)
+        x = self.gap(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+        return x
+    
+    
+class EMNISTDataset(Dataset):
+    def __init__(self, X, y):
+        self.X = X.astype('float32')
+        self.y = y.astype('int64')
+        self.transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.RandomAffine(degrees=10, translate=(0.1, 0.1), scale=(0.9, 1.1)),
+        transforms.ToTensor(),
+        transforms.Normalize((0.5,), (0.5,))
+        ])
+
+    def __len__(self):
+        return len(self.X)
+
+    def __getitem__(self, idx):
+        X = self.X[idx].reshape(28, 28)
+        X = self.transform(X)
+        y = self.y[idx]
+        return X, y
